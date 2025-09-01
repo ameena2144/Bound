@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Deadlines - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Important Deadlines</h1>
+        <p class="text-muted mb-0">Track court dates, filing deadlines, and important appointments</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeadlineModal">
+        <i data-feather="plus" class="me-1"></i>Add Deadline
+    </button>
+</div>
+
+<!-- Deadline Tabs -->
+<ul class="nav nav-tabs" id="deadlineTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button">
+            <i data-feather="calendar" class="me-1"></i>
+            Upcoming ({{ upcoming|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {{ 'text-danger' if overdue|length > 0 else '' }}" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button">
+            <i data-feather="alert-triangle" class="me-1"></i>
+            Overdue ({{ overdue|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button">
+            <i data-feather="check-circle" class="me-1"></i>
+            Completed ({{ completed|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="deadlineTabContent">
+    <!-- Upcoming Deadlines Tab -->
+    <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                {% if upcoming %}
+                    <div class="list-group list-group-flush">
+                        {% for deadline in upcoming %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">{{ deadline.title }}</h6>
+                                            <span class="badge bg-{{ 'danger' if deadline.priority == 'critical' else 'warning' if deadline.priority == 'high' else 'primary' if deadline.priority == 'medium' else 'secondary' }}">
+                                                {{ deadline.priority.title() }}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="mb-2">
+                                            <i data-feather="calendar" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                            <strong>{{ deadline.deadline_date.strftime('%A, %B %d, %Y at %I:%M %p') }}</strong>
+                                        </p>
+                                        
+                                        {% if deadline.location %}
+                                            <p class="mb-2">
+                                                <i data-feather="map-pin" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                                {{ deadline.location }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        {% if deadline.description %}
+                                            <p class="mb-2">{{ deadline.description }}</p>
+                                        {% endif %}
+                                        
+                                        <small class="text-muted">
+                                            Type: {{ deadline.deadline_type.replace('_', ' ').title() }}
+                                            {% set days_until = (deadline.deadline_date.date() - today).days %}
+                                            {% if days_until == 0 %}
+                                                | <strong class="text-warning">TODAY</strong>
+                                            {% elif days_until == 1 %}
+                                                | <strong class="text-warning">Tomorrow</strong>
+                                            {% elif days_until <= 7 %}
+                                                | <strong class="text-warning">In {{ days_until }} days</strong>
+                                            {% else %}
+                                                | In {{ days_until }} days
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="ms-3">
+                                        <form method="POST" action="{{ url_for('complete_deadline', deadline_id=deadline.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" 
+                                                    onclick="return confirm('Mark this deadline as completed?')">
+                                                <i data-feather="check" class="me-1"></i>Complete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="calendar" style="width: 3rem; height: 3rem;" class="text-muted mb-3"></i>
+                        <h5 class="text-muted">No Upcoming Deadlines</h5>
+                        <p class="text-muted">All caught up! Add new deadlines as they arise.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Deadlines Tab -->
+    <div class="tab-pane fade" id="overdue" role="tabpanel">
+        <div class="card border-danger">
+            <div class="card-body">
+                {% if overdue %}
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        <strong>Attention:</strong> You have {{ overdue|length }} overdue deadline{{ 's' if overdue|length != 1 else '' }}. Please review and take action immediately.
+                    </div>
+                    
+                    <div class="list-group list-group-flush">
+                        {% for deadline in overdue %}
+                            <div class="list-group-item border-start border-danger border-4">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1 text-danger">{{ deadline.title }}</h6>
+                                            <span class="badge bg-danger">
+                                                {{ deadline.priority.title() }}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="mb-2">
+                                            <i data-feather="calendar" class="me-1 text-danger" style="width: 1rem; height: 1rem;"></i>
+                                            <strong class="text-danger">{{ deadline.deadline_date.strftime('%A, %B %d, %Y at %I:%M %p') }}</strong>
+                                        </p>
+                                        
+                                        {% if deadline.location %}
+                                            <p class="mb-2">
+                                                <i data-feather="map-pin" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                                {{ deadline.location }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        {% if deadline.description %}
+                                            <p class="mb-2">{{ deadline.description }}</p>
+                                        {% endif %}
+                                        
+                                        <small class="text-muted">
+                                            Type: {{ deadline.deadline_type.replace('_', ' ').title() }}
+                                            {% set days_overdue = (today - deadline.deadline_date.date()).days %}
+                                            | <strong class="text-danger">{{ days_overdue }} day{{ 's' if days_overdue != 1 else '' }} overdue</strong>
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="ms-3">
+                                        <form method="POST" action="{{ url_for('complete_deadline', deadline_id=deadline.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" 
+                                                    onclick="return confirm('Mark this overdue deadline as completed?')">
+                                                <i data-feather="check" class="me-1"></i>Complete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="check-circle" style="width: 3rem; height: 3rem;" class="text-success mb-3"></i>
+                        <h5 class="text-success">No Overdue Deadlines</h5>
+                        <p class="text-muted">Great job staying on top of your deadlines!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Deadlines Tab -->
+    <div class="tab-pane fade" id="completed" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                {% if completed %}
+                    <div class="list-group list-group-flush">
+                        {% for deadline in completed %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">
+                                                <i data-feather="check-circle" class="text-success me-1"></i>
+                                                {{ deadline.title }}
+                                            </h6>
+                                            <span class="badge bg-success">Completed</span>
+                                        </div>
+                                        
+                                        <p class="mb-2">
+                                            <i data-feather="calendar" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                            {{ deadline.deadline_date.strftime('%A, %B %d, %Y at %I:%M %p') }}
+                                        </p>
+                                        
+                                        {% if deadline.location %}
+                                            <p class="mb-2">
+                                                <i data-feather="map-pin" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                                {{ deadline.location }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        {% if deadline.completion_notes %}
+                                            <div class="alert alert-light py-2">
+                                                <strong>Completion Notes:</strong> {{ deadline.completion_notes }}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <small class="text-muted">
+                                            Type: {{ deadline.deadline_type.replace('_', ' ').title() }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="calendar" style="width: 3rem; height: 3rem;" class="text-muted mb-3"></i>
+                        <h5 class="text-muted">No Completed Deadlines</h5>
+                        <p class="text-muted">Completed deadlines will appear here for your records.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Deadline Modal -->
+<div class="modal fade" id="addDeadlineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_deadline') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i data-feather="calendar-plus" class="me-2"></i>Add Deadline
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="Court hearing, filing deadline, mediation, etc.">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="deadline_date" class="form-label">Date & Time *</label>
+                                <input type="datetime-local" class="form-control" id="deadline_date" name="deadline_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deadline_type" class="form-label">Type</label>
+                        <select class="form-select" id="deadline_type" name="deadline_type">
+                            <option value="court_hearing" selected>Court Hearing</option>
+                            <option value="filing_deadline">Filing Deadline</option>
+                            <option value="mediation">Mediation</option>
+                            <option value="evaluation">Evaluation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" 
+                               placeholder="Court address, meeting location, etc.">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Additional details about this deadline, what to prepare, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-feather="calendar-plus" class="me-1"></i>Add Deadline
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Deadline Management Tips -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Deadline Management Best Practices</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Court Deadlines:</h6>
+                        <ul class="small">
+                            <li><strong>Never Miss Court:</strong> Failure to appear can result in default judgment</li>
+                            <li><strong>Arrive Early:</strong> Plan to arrive 15-30 minutes before scheduled time</li>
+                            <li><strong>Bring Documents:</strong> Have all required paperwork organized and ready</li>
+                            <li><strong>Dress Appropriately:</strong> Professional attire shows respect for the court</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Filing Deadlines:</h6>
+                        <ul class="small">
+                            <li><strong>File Early:</strong> Don't wait until the last minute to submit documents</li>
+                            <li><strong>Confirm Receipt:</strong> Get proof of filing from the court clerk</li>
+                            <li><strong>Serve Copies:</strong> Ensure other parties receive required documents</li>
+                            <li><strong>Follow Rules:</strong> Court rules are strict about format and timing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

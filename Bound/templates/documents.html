@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Documents - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Document Management</h1>
+        <p class="text-muted mb-0">AI-powered document organization and analysis</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i data-feather="upload" class="me-1"></i>Upload Document
+    </button>
+</div>
+
+<!-- Document Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-2">Filter by Category:</h6>
+                <div class="btn-group flex-wrap" role="group">
+                    <a href="{{ url_for('documents', category='all') }}" 
+                       class="btn btn-sm {{ 'btn-primary' if current_category == 'all' else 'btn-outline-primary' }}">
+                        All Documents
+                    </a>
+                    {% for category in categories %}
+                        <a href="{{ url_for('documents', category=category) }}" 
+                           class="btn btn-sm {{ 'btn-primary' if current_category == category else 'btn-outline-primary' }}">
+                            {{ category.replace('_', ' ').title() }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <small class="text-muted">{{ documents|length }} document{{ 's' if documents|length != 1 else '' }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents List -->
+{% if documents %}
+    <div class="row">
+        {% for document in documents %}
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ document.original_filename }}</h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <span class="badge bg-{{ 'primary' if document.category == 'court_order' else 'success' if document.category == 'custody_agreement' else 'info' if document.category == 'medical' else 'warning' if document.category == 'school' else 'secondary' }}">
+                                    {{ document.category.replace('_', ' ').title() if document.category else 'Uncategorized' }}
+                                </span>
+                                {% if document.is_court_filing %}
+                                    <span class="badge bg-danger">Court Filing</span>
+                                {% endif %}
+                                {% if document.is_confidential %}
+                                    <span class="badge bg-warning">Confidential</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i data-feather="more-horizontal"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('view_document', document_id=document.id) }}">
+                                    <i data-feather="eye" class="me-2"></i>View Details
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('uploaded_file', filename=document.filename) }}" target="_blank">
+                                    <i data-feather="download" class="me-2"></i>Download
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- File Information -->
+                        <div class="mb-3">
+                            <div class="row text-sm">
+                                <div class="col-6">
+                                    <strong>Type:</strong> {{ document.file_type.upper() }}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Size:</strong> {{ format_file_size(document.file_size) }}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Uploaded:</strong><br>
+                                    <small>{{ document.created_at.strftime('%m/%d/%Y') }}</small>
+                                </div>
+                                <div class="col-6">
+                                    {% if document.document_date %}
+                                        <strong>Document Date:</strong><br>
+                                        <small>{{ document.document_date.strftime('%m/%d/%Y') }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Summary -->
+                        {% if document.ai_summary %}
+                            <div class="mb-3">
+                                <h6 class="text-primary mb-2">
+                                    <i data-feather="cpu" class="me-1"></i>AI Summary
+                                </h6>
+                                <p class="small mb-0">{{ document.ai_summary[:200] + '...' if document.ai_summary|length > 200 else document.ai_summary }}</p>
+                            </div>
+                        {% endif %}
+
+                        <!-- Description -->
+                        {% if document.description %}
+                            <div class="mb-3">
+                                <strong>Description:</strong><br>
+                                <small>{{ document.description }}</small>
+                            </div>
+                        {% endif %}
+
+                        <!-- AI Key Points Preview -->
+                        {% if document.ai_key_points %}
+                            {% set key_points = document.ai_key_points | from_json %}
+                            {% if key_points and key_points|length > 0 %}
+                                <div class="mb-3">
+                                    <h6 class="text-success mb-2">
+                                        <i data-feather="check-circle" class="me-1"></i>Key Points
+                                    </h6>
+                                    <ul class="small mb-0">
+                                        {% for point in key_points[:2] %}
+                                            <li>{{ point }}</li>
+                                        {% endfor %}
+                                        {% if key_points|length > 2 %}
+                                            <li><em>+{{ key_points|length - 2 }} more...</em></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <div class="d-grid">
+                            <a href="{{ url_for('view_document', document_id=document.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i data-feather="eye" class="me-1"></i>View Full Analysis
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i data-feather="folder" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        {% if current_category != 'all' %}
+            <h3 class="text-muted">No {{ current_category.replace('_', ' ').title() }} Documents</h3>
+            <p class="text-muted mb-4">No documents found in this category.</p>
+            <a href="{{ url_for('documents') }}" class="btn btn-outline-secondary me-2">View All Documents</a>
+        {% else %}
+            <h3 class="text-muted">No Documents Yet</h3>
+            <p class="text-muted mb-4">Upload your legal documents to get started with AI-powered analysis and organization.</p>
+        {% endif %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            <i data-feather="upload" class="me-1"></i>Upload First Document
+        </button>
+    </div>
+{% endif %}
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i data-feather="upload" class="me-2"></i>Upload Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Choose File *</label>
+                                <input type="file" class="form-control" id="file" name="file" required>
+                                <div class="form-text">
+                                    Supported formats: PDF, DOC, DOCX, TXT, images (PNG, JPG), audio files (MP3, WAV)
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="document_date" class="form-label">Document Date</label>
+                                <input type="date" class="form-control" id="document_date" name="document_date">
+                                <div class="form-text">When was this document created/signed?</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3" 
+                                          placeholder="Brief description of the document and its relevance to your case"></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_court_filing" name="is_court_filing">
+                                    <label class="form-check-label" for="is_court_filing">
+                                        <strong>Court Filing</strong>
+                                        <br><small class="text-muted">This document was filed with the court</small>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_confidential" name="is_confidential">
+                                    <label class="form-check-label" for="is_confidential">
+                                        <strong>Confidential</strong>
+                                        <br><small class="text-muted">Contains sensitive information</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i data-feather="cpu" class="me-2"></i>
+                        <strong>AI Analysis:</strong> Your document will be automatically analyzed to extract key information, 
+                        categorize content, and identify important dates and obligations.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-feather="upload" class="me-1"></i>Upload & Analyze
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Benefits Information Card -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Document Management Best Practices</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Organization Tips:</h6>
+                        <ul class="small">
+                            <li>Upload documents as soon as you receive them</li>
+                            <li>Use descriptive filenames before uploading</li>
+                            <li>Mark court filings and confidential documents appropriately</li>
+                            <li>Include document dates when known</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>AI Analysis Benefits:</h6>
+                        <ul class="small">
+                            <li>Automatic categorization of document types</li>
+                            <li>Extraction of important dates and deadlines</li>
+                            <li>Identification of key legal obligations</li>
+                            <li>Summary of relevant information for quick reference</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

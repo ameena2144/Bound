@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.original_filename }} - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">{{ document.original_filename }}</h1>
+        <p class="text-muted mb-0">Document analysis and details</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('uploaded_file', filename=document.filename) }}" target="_blank" class="btn btn-outline-primary">
+            <i data-feather="download" class="me-1"></i>Download
+        </a>
+        <a href="{{ url_for('documents') }}" class="btn btn-outline-secondary">
+            <i data-feather="arrow-left" class="me-1"></i>Back to Documents
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Document Information -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i data-feather="file" class="me-2"></i>Document Information</h5>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-{{ 'primary' if document.category == 'court_order' else 'success' if document.category == 'custody_agreement' else 'info' if document.category == 'medical' else 'warning' if document.category == 'school' else 'secondary' }}">
+                        {{ document.category.replace('_', ' ').title() if document.category else 'Uncategorized' }}
+                    </span>
+                    {% if document.is_court_filing %}
+                        <span class="badge bg-danger">Court Filing</span>
+                    {% endif %}
+                    {% if document.is_confidential %}
+                        <span class="badge bg-warning">Confidential</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td><strong>File Type:</strong></td>
+                                <td>{{ document.file_type.upper() }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>File Size:</strong></td>
+                                <td>{{ format_file_size(document.file_size) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Uploaded:</strong></td>
+                                <td>{{ document.created_at.strftime('%m/%d/%Y at %I:%M %p') }}</td>
+                            </tr>
+                            {% if document.document_date %}
+                                <tr>
+                                    <td><strong>Document Date:</strong></td>
+                                    <td>{{ document.document_date.strftime('%m/%d/%Y') }}</td>
+                                </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        {% if document.description %}
+                            <h6>Description</h6>
+                            <p>{{ document.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analysis -->
+        {% if document.ai_summary or key_points %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="cpu" class="me-2 text-primary"></i>
+                        AI Document Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if document.ai_summary %}
+                        <div class="mb-4">
+                            <h6 class="text-primary">Document Summary</h6>
+                            <p class="lead">{{ document.ai_summary }}</p>
+                        </div>
+                    {% endif %}
+
+                    {% if key_points and key_points|length > 0 %}
+                        <div class="mb-4">
+                            <h6 class="text-success">Key Points Identified</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for point in key_points %}
+                                    <li class="list-group-item d-flex align-items-start">
+                                        <i data-feather="check-circle" class="text-success me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                        <span>{{ point }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    {% if document.ai_category_suggestion and document.ai_category_suggestion != document.category %}
+                        <div class="alert alert-info">
+                            <i data-feather="info" class="me-2"></i>
+                            <strong>AI Suggestion:</strong> This document might be better categorized as 
+                            "<em>{{ document.ai_category_suggestion.replace('_', ' ').title() }}</em>"
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-feather="zap" class="me-2"></i>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('uploaded_file', filename=document.filename) }}" target="_blank" class="btn btn-outline-primary">
+                        <i data-feather="eye" class="me-1"></i>View Document
+                    </a>
+                    <a href="{{ url_for('uploaded_file', filename=document.filename) }}" download class="btn btn-outline-secondary">
+                        <i data-feather="download" class="me-1"></i>Download File
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Categories -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-feather="folder" class="me-2"></i>Document Categories</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong class="text-primary">Court Orders:</strong> Official court rulings and judgments</p>
+                    <p><strong class="text-success">Custody Agreements:</strong> Parenting plans and custody arrangements</p>
+                    <p><strong class="text-info">Medical:</strong> Health records, doctor reports, evaluations</p>
+                    <p><strong class="text-warning">School:</strong> Educational records, report cards, IEPs</p>
+                    <p><strong class="text-secondary">Correspondence:</strong> Letters, emails, communications</p>
+                    <p class="mb-0"><strong class="text-dark">Financial:</strong> Income statements, support calculations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Information -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Technical Details</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td><strong>Original Name:</strong></td>
+                        <td class="text-break">{{ document.original_filename }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>File Type:</strong></td>
+                        <td>{{ document.file_type.upper() }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Size:</strong></td>
+                        <td>{{ format_file_size(document.file_size) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Uploaded:</strong></td>
+                        <td>{{ document.created_at.strftime('%m/%d/%Y') }}<br>
+                            <small class="text-muted">{{ document.created_at.strftime('%I:%M %p') }}</small>
+                        </td>
+                    </tr>
+                    {% if document.document_date %}
+                        <tr>
+                            <td><strong>Document Date:</strong></td>
+                            <td>{{ document.document_date.strftime('%m/%d/%Y') }}</td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Analysis Benefits -->
+{% if document.ai_summary or key_points %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i data-feather="cpu" class="me-2"></i>About AI Document Analysis</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>What AI Analysis Provides:</h6>
+                            <ul class="small">
+                                <li><strong>Document Summary:</strong> Quick overview of main content</li>
+                                <li><strong>Key Points:</strong> Important details and obligations</li>
+                                <li><strong>Category Suggestions:</strong> Automated organization</li>
+                                <li><strong>Date Extraction:</strong> Important deadlines and dates</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Legal Benefits:</h6>
+                            <ul class="small">
+                                <li><strong>Quick Review:</strong> Understand documents faster</li>
+                                <li><strong>Missing Nothing:</strong> Identifies important details</li>
+                                <li><strong>Organization:</strong> Better document management</li>
+                                <li><strong>Preparation:</strong> Better prepared for legal proceedings</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

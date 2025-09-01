@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if parent else 'Add' }} Parent Profile - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">{{ 'Edit' if parent else 'Add' }} Parent Profile</h1>
+        <p class="text-muted mb-0">{{ 'Update' if parent else 'Enter' }} detailed information about the parent/guardian</p>
+    </div>
+    <a href="{{ url_for('parent_profiles') }}" class="btn btn-outline-secondary">
+        <i data-feather="arrow-left" class="me-1"></i>Back to Parents
+    </a>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Basic Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="user" class="me-2"></i>Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ parent.first_name if parent else '' }}" required>
+                                <div class="invalid-feedback">Please provide the first name.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ parent.last_name if parent else '' }}" required>
+                                <div class="invalid-feedback">Please provide the last name.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="relationship_to_children" class="form-label">Relationship to Children</label>
+                                <select class="form-select" id="relationship_to_children" name="relationship_to_children">
+                                    <option value="">Select relationship</option>
+                                    <option value="mother" {{ 'selected' if parent and parent.relationship_to_children == 'mother' else '' }}>Mother</option>
+                                    <option value="father" {{ 'selected' if parent and parent.relationship_to_children == 'father' else '' }}>Father</option>
+                                    <option value="stepmother" {{ 'selected' if parent and parent.relationship_to_children == 'stepmother' else '' }}>Stepmother</option>
+                                    <option value="stepfather" {{ 'selected' if parent and parent.relationship_to_children == 'stepfather' else '' }}>Stepfather</option>
+                                    <option value="guardian" {{ 'selected' if parent and parent.relationship_to_children == 'guardian' else '' }}>Legal Guardian</option>
+                                    <option value="grandparent" {{ 'selected' if parent and parent.relationship_to_children == 'grandparent' else '' }}>Grandparent</option>
+                                    <option value="other" {{ 'selected' if parent and parent.relationship_to_children == 'other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ parent.date_of_birth.strftime('%Y-%m-%d') if parent and parent.date_of_birth else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="phone" class="me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Primary Phone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ parent.phone if parent else '' }}" 
+                                       placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ parent.email if parent else '' }}" 
+                                       placeholder="email@example.com">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Home Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="2" 
+                                  placeholder="Street address, city, state, zip code">{{ parent.address if parent else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employment Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="briefcase" class="me-2"></i>Employment Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="employer" class="form-label">Employer</label>
+                                <input type="text" class="form-control" id="employer" name="employer" 
+                                       value="{{ parent.employer if parent else '' }}" 
+                                       placeholder="Company name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="job_title" class="form-label">Job Title</label>
+                                <input type="text" class="form-control" id="job_title" name="job_title" 
+                                       value="{{ parent.job_title if parent else '' }}" 
+                                       placeholder="Position title">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="work_phone" class="form-label">Work Phone</label>
+                                <input type="tel" class="form-control" id="work_phone" name="work_phone" 
+                                       value="{{ parent.work_phone if parent else '' }}" 
+                                       placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="income" class="form-label">Annual Income</label>
+                                <input type="text" class="form-control" id="income" name="income" 
+                                       value="{{ parent.income if parent else '' }}" 
+                                       placeholder="e.g., $50,000, $4,000/month">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="work_address" class="form-label">Work Address</label>
+                        <textarea class="form-control" id="work_address" name="work_address" rows="2" 
+                                  placeholder="Workplace address">{{ parent.work_address if parent else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Housing Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="home" class="me-2"></i>Housing Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="housing_type" class="form-label">Housing Type</label>
+                        <select class="form-select" id="housing_type" name="housing_type">
+                            <option value="">Select housing type</option>
+                            <option value="owned" {{ 'selected' if parent and parent.housing_type == 'owned' else '' }}>Owned</option>
+                            <option value="rented" {{ 'selected' if parent and parent.housing_type == 'rented' else '' }}>Rented</option>
+                            <option value="family" {{ 'selected' if parent and parent.housing_type == 'family' else '' }}>Living with Family</option>
+                            <option value="temporary" {{ 'selected' if parent and parent.housing_type == 'temporary' else '' }}>Temporary Housing</option>
+                            <option value="other" {{ 'selected' if parent and parent.housing_type == 'other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="housing_stability" class="form-label">Housing Stability & Details</label>
+                        <textarea class="form-control" id="housing_stability" name="housing_stability" rows="3" 
+                                  placeholder="Length of residence, stability, living conditions, number of bedrooms, etc.">{{ parent.housing_stability if parent else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parenting Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="heart" class="me-2"></i>Parenting Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="parenting_time" class="form-label">Current Parenting Time/Custody</label>
+                        <textarea class="form-control" id="parenting_time" name="parenting_time" rows="3" 
+                                  placeholder="Current custody arrangement, visitation schedule, percentage of time">{{ parent.parenting_time if parent else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="parenting_concerns" class="form-label">Parenting Concerns or Issues</label>
+                        <textarea class="form-control" id="parenting_concerns" name="parenting_concerns" rows="3" 
+                                  placeholder="Any concerns about this parent's ability or issues that affect parenting">{{ parent.parenting_concerns if parent else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Background Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="info" class="me-2"></i>Background Information</h5>
+                    <small class="text-muted">Sensitive information - mark as confidential if needed</small>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="criminal_history" class="form-label">Criminal History</label>
+                        <textarea class="form-control" id="criminal_history" name="criminal_history" rows="3" 
+                                  placeholder="Any criminal convictions, arrests, protective orders">{{ parent.criminal_history if parent else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="substance_abuse_history" class="form-label">Substance Abuse History</label>
+                        <textarea class="form-control" id="substance_abuse_history" name="substance_abuse_history" rows="3" 
+                                  placeholder="History of substance abuse, treatment, current status">{{ parent.substance_abuse_history if parent else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mental_health_history" class="form-label">Mental Health History</label>
+                        <textarea class="form-control" id="mental_health_history" name="mental_health_history" rows="3" 
+                                  placeholder="Mental health issues, treatment, medication, impact on parenting">{{ parent.mental_health_history if parent else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save" class="me-1"></i>
+                            {{ 'Update' if parent else 'Save' }} Parent Profile
+                        </button>
+                        <a href="{{ url_for('parent_profiles') }}" class="btn btn-outline-secondary">
+                            <i data-feather="x" class="me-1"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Help Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="help-circle" class="me-2"></i>Parent Profile Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Required Information:</h6>
+                        <ul class="small">
+                            <li>Only first and last name are required fields</li>
+                            <li>Fill out as much relevant information as possible</li>
+                            <li>Information can be updated at any time</li>
+                            <li>All information is kept confidential and secure</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Sensitive Information:</h6>
+                        <ul class="small">
+                            <li><strong>Be Factual:</strong> Only include verified, relevant information</li>
+                            <li><strong>Legal Relevance:</strong> Focus on factors that affect parenting ability</li>
+                            <li><strong>Documentation:</strong> Keep supporting documents for any claims</li>
+                            <li><strong>Professional Use:</strong> This information may be shared with attorneys</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

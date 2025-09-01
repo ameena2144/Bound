@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Case Timeline - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Case Timeline</h1>
+        <p class="text-muted mb-0">Chronological view of all case events, incidents, and deadlines</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('add_incident') }}" class="btn btn-outline-warning">
+            <i data-feather="plus" class="me-1"></i>Log Incident
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeadlineModal">
+            <i data-feather="calendar-plus" class="me-1"></i>Add Deadline
+        </button>
+    </div>
+</div>
+
+<!-- Timeline Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-2">Filter Timeline:</h6>
+                <div class="btn-group flex-wrap" role="group">
+                    <button class="btn btn-sm btn-primary" onclick="filterTimeline('all')">All Events</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="filterTimeline('incident')">Incidents</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="filterTimeline('deadline')">Deadlines</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="filterTimeline('document')">Documents</button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <small class="text-muted">{{ events|length }} total event{{ 's' if events|length != 1 else '' }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline -->
+{% if events %}
+    <div class="timeline-container">
+        {% for event in events %}
+            <div class="timeline-item" data-event-type="{{ event.type }}">
+                <div class="row">
+                    <div class="col-md-3 timeline-date">
+                        <div class="sticky-top" style="top: 1rem;">
+                            <div class="text-end">
+                                <div class="fw-bold">{{ event.date.strftime('%m/%d/%Y') }}</div>
+                                <small class="text-muted">{{ event.date.strftime('%I:%M %p') if event.date.hour != 0 or event.date.minute != 0 else '' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1 timeline-indicator">
+                        <div class="timeline-icon bg-{{ 
+                            'danger' if event.type == 'incident' and event.severity in ['critical', 'high'] else
+                            'warning' if event.type == 'incident' else
+                            'primary' if event.type == 'deadline' and not event.get('is_completed') else
+                            'success' if event.type == 'deadline' and event.get('is_completed') else
+                            'info' if event.type == 'document' else 'secondary'
+                        }}">
+                            {% if event.type == 'incident' %}
+                                <i data-feather="alert-triangle"></i>
+                            {% elif event.type == 'deadline' %}
+                                <i data-feather="{{ 'check-circle' if event.get('is_completed') else 'calendar' }}"></i>
+                            {% elif event.type == 'document' %}
+                                <i data-feather="file"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-8 timeline-content">
+                        <div class="card border-start border-4 border-{{ 
+                            'danger' if event.type == 'incident' and event.severity in ['critical', 'high'] else
+                            'warning' if event.type == 'incident' else
+                            'primary' if event.type == 'deadline' and not event.get('is_completed') else
+                            'success' if event.type == 'deadline' and event.get('is_completed') else
+                            'info' if event.type == 'document' else 'secondary'
+                        }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">{{ event.title }}</h6>
+                                    <div class="d-flex gap-2">
+                                        {% if event.type == 'incident' %}
+                                            <span class="badge bg-{{ 'danger' if event.severity == 'critical' else 'warning' if event.severity == 'high' else 'info' }}">
+                                                {{ event.severity.title() }}
+                                            </span>
+                                        {% elif event.type == 'deadline' %}
+                                            {% if event.is_completed %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-{{ 'danger' if event.priority == 'critical' else 'warning' if event.priority == 'high' else 'primary' }}">
+                                                    {{ event.priority.title() }}
+                                                </span>
+                                            {% endif %}
+                                        {% elif event.type == 'document' %}
+                                            <span class="badge bg-secondary">{{ event.category.replace('_', ' ').title() if event.category else 'Document' }}</span>
+                                        {% endif %}
+                                        <span class="badge bg-light text-dark">{{ event.type.title() }}</span>
+                                    </div>
+                                </div>
+                                
+                                <p class="card-text">{{ event.description }}</p>
+                                
+                                <!-- Action buttons based on event type -->
+                                <div class="d-flex gap-2">
+                                    {% if event.type == 'incident' %}
+                                        <a href="{{ url_for('incidents') }}" class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="eye" class="me-1"></i>View Details
+                                        </a>
+                                    {% elif event.type == 'deadline' %}
+                                        <a href="{{ url_for('deadlines') }}" class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="calendar" class="me-1"></i>View Deadlines
+                                        </a>
+                                        {% if not event.is_completed %}
+                                            <form method="POST" action="{{ url_for('complete_deadline', deadline_id=event.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i data-feather="check" class="me-1"></i>Mark Complete
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% elif event.type == 'document' %}
+                                        <a href="{{ url_for('view_document', document_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="eye" class="me-1"></i>View Document
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i data-feather="clock" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        <h3 class="text-muted">No Timeline Events Yet</h3>
+        <p class="text-muted mb-4">Start building your case timeline by adding incidents, deadlines, and uploading documents.</p>
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="{{ url_for('add_incident') }}" class="btn btn-outline-warning">
+                <i data-feather="plus" class="me-1"></i>Log First Incident
+            </a>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDeadlineModal">
+                <i data-feather="calendar-plus" class="me-1"></i>Add Deadline
+            </button>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Add Deadline Modal -->
+<div class="modal fade" id="addDeadlineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_deadline') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Deadline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required placeholder="Court hearing, filing deadline, etc.">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="deadline_date" class="form-label">Date & Time *</label>
+                                <input type="datetime-local" class="form-control" id="deadline_date" name="deadline_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deadline_type" class="form-label">Type</label>
+                        <select class="form-select" id="deadline_type" name="deadline_type">
+                            <option value="court_hearing">Court Hearing</option>
+                            <option value="filing_deadline">Filing Deadline</option>
+                            <option value="mediation">Mediation</option>
+                            <option value="evaluation">Evaluation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="Court address, meeting location, etc.">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Additional details about this deadline"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Deadline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline Benefits Card -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Why Timeline Documentation Matters</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Legal Benefits:</h6>
+                        <ul class="small">
+                            <li><strong>Pattern Recognition:</strong> Shows trends in behavior or incidents</li>
+                            <li><strong>Court Preparation:</strong> Chronological evidence for hearings</li>
+                            <li><strong>Deadline Management:</strong> Never miss important court dates</li>
+                            <li><strong>Case Strategy:</strong> Helps identify key turning points</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Organization Benefits:</h6>
+                        <ul class="small">
+                            <li><strong>Complete Picture:</strong> All events in chronological order</li>
+                            <li><strong>Quick Reference:</strong> Easy to find specific dates and events</li>
+                            <li><strong>Documentation:</strong> Comprehensive record for your attorney</li>
+                            <li><strong>Compliance:</strong> Track court order compliance over time</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

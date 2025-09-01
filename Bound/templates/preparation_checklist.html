@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Preparation Checklist - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Case Preparation Checklist</h1>
+        <p class="text-muted mb-0">AI-generated preparation guide for your case</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i data-feather="printer" class="me-1"></i>Print Checklist
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+{% if 'error' in checklist %}
+    <div class="alert alert-warning">
+        <i data-feather="alert-triangle" class="me-2"></i>
+        <strong>Checklist Unavailable:</strong> {{ checklist.error }}
+        <br><small>Please check your OpenAI API configuration and try again.</small>
+    </div>
+{% endif %}
+
+<!-- Checklist Type Selection -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="mb-3">Generate Checklist For:</h6>
+        <div class="row">
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist', hearing_type='court_hearing') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if request.args.get('hearing_type') == 'court_hearing' else '' }}">
+                    <i data-feather="briefcase" class="me-2"></i>Court Hearing
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist', hearing_type='mediation') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if request.args.get('hearing_type') == 'mediation' else '' }}">
+                    <i data-feather="users" class="me-2"></i>Mediation
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist', hearing_type='custody_evaluation') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if request.args.get('hearing_type') == 'custody_evaluation' else '' }}">
+                    <i data-feather="clipboard" class="me-2"></i>Custody Evaluation
+                </a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist', hearing_type='deposition') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if request.args.get('hearing_type') == 'deposition' else '' }}">
+                    <i data-feather="mic" class="me-2"></i>Deposition
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist', hearing_type='trial') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if request.args.get('hearing_type') == 'trial' else '' }}">
+                    <i data-feather="eye" class="me-2"></i>Trial
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('preparation_checklist') }}" 
+                   class="btn btn-outline-primary w-100 mb-2 {{ 'active' if not request.args.get('hearing_type') or request.args.get('hearing_type') == 'general' else '' }}">
+                    <i data-feather="list" class="me-2"></i>General Preparation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Checklist Title -->
+        {% if checklist.checklist_title %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i data-feather="check-square" class="me-2"></i>
+                        {{ checklist.checklist_title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">Use this comprehensive checklist to ensure you're fully prepared for your {{ request.args.get('hearing_type', 'case').replace('_', ' ') }}.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Preparation Items -->
+        {% if checklist.preparation_items and checklist.preparation_items|length > 0 %}
+            {% for category in checklist.preparation_items %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center
+                        {% if category.priority == 'high' %}bg-danger text-white
+                        {% elif category.priority == 'medium' %}bg-warning text-dark
+                        {% else %}bg-info text-white{% endif %}">
+                        <h5 class="mb-0">{{ category.category }}</h5>
+                        <span class="badge 
+                            {% if category.priority == 'high' %}bg-light text-dark
+                            {% elif category.priority == 'medium' %}bg-dark text-white  
+                            {% else %}bg-light text-dark{% endif %}">
+                            {{ category.priority.title() }} Priority
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="checklist-items">
+                            {% for item in category.items %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input checklist-item" type="checkbox" id="item_{{ loop.parent.loop.index0 }}_{{ loop.index0 }}">
+                                    <label class="form-check-label" for="item_{{ loop.parent.loop.index0 }}_{{ loop.index0 }}">
+                                        {{ item }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Progress bar for this category -->
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Category Progress</small>
+                                <small class="text-muted category-progress">0 of {{ category.items|length }} completed</small>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar category-progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Timeline Suggestions -->
+        {% if checklist.timeline_suggestions and checklist.timeline_suggestions|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="calendar" class="me-2"></i>
+                        Timeline Suggestions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for suggestion in checklist.timeline_suggestions %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="clock" class="text-success me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ suggestion }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Common Mistakes -->
+        {% if checklist.common_mistakes and checklist.common_mistakes|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        Common Mistakes to Avoid
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for mistake in checklist.common_mistakes %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="x-circle" class="text-warning me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ mistake }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Overall Progress -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="target" class="me-2"></i>
+                    Overall Progress
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="progress-circle mb-3">
+                    <div class="display-4 font-weight-bold text-primary overall-percentage">0%</div>
+                    <small class="text-muted">Complete</small>
+                </div>
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar bg-primary overall-progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted overall-completed">0 completed</small>
+                    <small class="text-muted overall-total">of 0 tasks</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="zap" class="me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button onclick="checkAllItems()" class="btn btn-outline-success btn-sm">
+                        <i data-feather="check-circle" class="me-1"></i>Check All
+                    </button>
+                    <button onclick="uncheckAllItems()" class="btn btn-outline-secondary btn-sm">
+                        <i data-feather="square" class="me-1"></i>Uncheck All
+                    </button>
+                    <button onclick="saveProgress()" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="save" class="me-1"></i>Save Progress
+                    </button>
+                    <button onclick="loadProgress()" class="btn btn-outline-info btn-sm">
+                        <i data-feather="upload" class="me-1"></i>Load Progress
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help & Tips -->
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i data-feather="help-circle" class="me-2"></i>
+                    Preparation Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Start Early:</strong> Begin preparation well in advance of your court date or meeting.</p>
+                    <p><strong>Stay Organized:</strong> Keep all documents in clearly labeled folders or binders.</p>
+                    <p><strong>Practice:</strong> Rehearse what you'll say, especially for testimony or presentations.</p>
+                    <p class="mb-0"><strong>Professional Help:</strong> Consider consulting with an attorney for complex issues.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- No Checklist Available -->
+{% if not checklist.preparation_items or checklist.preparation_items|length == 0 %}
+    <div class="text-center py-5">
+        <i data-feather="check-square" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        <h3 class="text-muted">No Checklist Available</h3>
+        <p class="text-muted mb-4">Unable to generate a preparation checklist at this time. Please check your API configuration or try again later.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i data-feather="arrow-left" class="me-1"></i>Return to Dashboard
+        </a>
+    </div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize checklist functionality
+    initializeChecklist();
+    
+    // Load saved progress
+    loadProgress();
+});
+
+function initializeChecklist() {
+    const checkboxes = document.querySelectorAll('.checklist-item');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateProgress();
+            saveProgress(); // Auto-save progress
+        });
+    });
+    
+    updateProgress();
+}
+
+function updateProgress() {
+    const allCheckboxes = document.querySelectorAll('.checklist-item');
+    const checkedBoxes = document.querySelectorAll('.checklist-item:checked');
+    
+    // Overall progress
+    const overallTotal = allCheckboxes.length;
+    const overallCompleted = checkedBoxes.length;
+    const overallPercentage = overallTotal > 0 ? Math.round((overallCompleted / overallTotal) * 100) : 0;
+    
+    document.querySelector('.overall-percentage').textContent = overallPercentage + '%';
+    document.querySelector('.overall-progress-bar').style.width = overallPercentage + '%';
+    document.querySelector('.overall-completed').textContent = overallCompleted + ' completed';
+    document.querySelector('.overall-total').textContent = 'of ' + overallTotal + ' tasks';
+    
+    // Category progress
+    const categories = document.querySelectorAll('.card');
+    categories.forEach(category => {
+        const categoryCheckboxes = category.querySelectorAll('.checklist-item');
+        const categoryChecked = category.querySelectorAll('.checklist-item:checked');
+        
+        if (categoryCheckboxes.length > 0) {
+            const categoryPercentage = Math.round((categoryChecked.length / categoryCheckboxes.length) * 100);
+            
+            const progressText = category.querySelector('.category-progress');
+            const progressBar = category.querySelector('.category-progress-bar');
+            
+            if (progressText) {
+                progressText.textContent = categoryChecked.length + ' of ' + categoryCheckboxes.length + ' completed';
+            }
+            
+            if (progressBar) {
+                progressBar.style.width = categoryPercentage + '%';
+                
+                // Update progress bar color based on completion
+                progressBar.className = 'progress-bar';
+                if (categoryPercentage === 100) {
+                    progressBar.classList.add('bg-success');
+                } else if (categoryPercentage >= 50) {
+                    progressBar.classList.add('bg-warning');
+                } else {
+                    progressBar.classList.add('bg-danger');
+                }
+            }
+        }
+    });
+}
+
+function checkAllItems() {
+    const checkboxes = document.querySelectorAll('.checklist-item');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateProgress();
+    saveProgress();
+}
+
+function uncheckAllItems() {
+    const checkboxes = document.querySelectorAll('.checklist-item');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateProgress();
+    saveProgress();
+}
+
+function saveProgress() {
+    const checkboxes = document.querySelectorAll('.checklist-item');
+    const progress = {};
+    
+    checkboxes.forEach(checkbox => {
+        progress[checkbox.id] = checkbox.checked;
+    });
+    
+    const checklistType = '{{ request.args.get("hearing_type", "general") }}';
+    localStorage.setItem('checklist-progress-' + checklistType, JSON.stringify(progress));
+    
+    // Show save indicator
+    showSaveMessage();
+}
+
+function loadProgress() {
+    const checklistType = '{{ request.args.get("hearing_type", "general") }}';
+    const savedProgress = localStorage.getItem('checklist-progress-' + checklistType);
+    
+    if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        
+        Object.entries(progress).forEach(([id, checked]) => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.checked = checked;
+            }
+        });
+        
+        updateProgress();
+    }
+}
+
+function showSaveMessage() {
+    // Create or update save message
+    let saveMsg = document.querySelector('.save-message');
+    if (!saveMsg) {
+        saveMsg = document.createElement('div');
+        saveMsg.className = 'save-message position-fixed bottom-0 end-0 m-3 alert alert-success alert-dismissible fade';
+        saveMsg.innerHTML = `
+            <i data-feather="check-circle" class="me-2"></i>
+            Progress saved automatically
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(saveMsg);
+    }
+    
+    saveMsg.classList.add('show');
+    
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+        saveMsg.classList.remove('show');
+    }, 2000);
+    
+    // Re-initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+// Print-specific styles
+const printStyles = `
+    @media print {
+        .no-print, .btn, .dropdown, .progress { display: none !important; }
+        .card { break-inside: avoid; margin-bottom: 1rem !important; }
+        .form-check-input:checked::before { content: '✓'; }
+        .form-check-input { 
+            -webkit-appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #000;
+            margin-right: 8px;
+        }
+        .form-check-input:checked {
+            background-color: transparent;
+            border-color: #000;
+        }
+    }
+`;
+
+// Add print styles to document
+const style = document.createElement('style');
+style.textContent = printStyles;
+document.head.appendChild(style);
+</script>
+{% endblock %}

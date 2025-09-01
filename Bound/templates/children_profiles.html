@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Children Profiles - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Children Profiles</h1>
+        <p class="text-muted mb-0">Comprehensive information about the children involved in your case</p>
+    </div>
+    <a href="{{ url_for('add_child') }}" class="btn btn-primary">
+        <i data-feather="plus" class="me-1"></i>Add Child
+    </a>
+</div>
+
+{% if children %}
+    <div class="row">
+        {% for child in children %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ child.first_name }} {{ child.last_name }}</h5>
+                        <a href="{{ url_for('edit_child', child_id=child.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i data-feather="edit" class="me-1"></i>Edit
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <!-- Basic Information -->
+                        <h6 class="text-primary mb-2">Basic Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <strong>Date of Birth:</strong><br>
+                                {{ child.date_of_birth.strftime('%m/%d/%Y') if child.date_of_birth else 'Not specified' }}
+                                {% if child.date_of_birth %}
+                                    <br><small class="text-muted">Age: {{ ((today - child.date_of_birth).days // 365) if child.date_of_birth else 'Unknown' }} years</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Gender:</strong><br>
+                                {{ child.gender or 'Not specified' }}
+                            </div>
+                        </div>
+
+                        <!-- Current Living Situation -->
+                        {% if child.current_residence or child.residence_address %}
+                            <h6 class="text-primary mb-2">Current Living Situation</h6>
+                            <div class="mb-3">
+                                <strong>Currently Living With:</strong><br>
+                                {{ child.current_residence.title() if child.current_residence else 'Not specified' }}
+                                {% if child.residence_address %}
+                                    <br><strong>Address:</strong><br>
+                                    <small>{{ child.residence_address }}</small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- School Information -->
+                        {% if child.school_name or child.grade_level %}
+                            <h6 class="text-primary mb-2">School Information</h6>
+                            <div class="row mb-3">
+                                <div class="col-sm-8">
+                                    <strong>School:</strong><br>
+                                    {{ child.school_name or 'Not specified' }}
+                                    {% if child.grade_level %}
+                                        <br><small class="text-muted">Grade: {{ child.grade_level }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-sm-4">
+                                    {% if child.school_phone %}
+                                        <strong>Phone:</strong><br>
+                                        <small>{{ child.school_phone }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Medical Information -->
+                        {% if child.primary_doctor or child.medical_conditions or child.medications or child.allergies %}
+                            <h6 class="text-primary mb-2">Medical Information</h6>
+                            <div class="mb-3">
+                                {% if child.primary_doctor %}
+                                    <strong>Primary Doctor:</strong> {{ child.primary_doctor }}<br>
+                                {% endif %}
+                                {% if child.medical_conditions %}
+                                    <strong>Medical Conditions:</strong><br>
+                                    <small>{{ child.medical_conditions }}</small><br>
+                                {% endif %}
+                                {% if child.medications %}
+                                    <strong>Medications:</strong><br>
+                                    <small>{{ child.medications }}</small><br>
+                                {% endif %}
+                                {% if child.allergies %}
+                                    <strong>Allergies:</strong><br>
+                                    <small>{{ child.allergies }}</small><br>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Activities and Special Information -->
+                        {% if child.activities or child.special_needs or child.preferences %}
+                            <h6 class="text-primary mb-2">Additional Information</h6>
+                            <div class="mb-3">
+                                {% if child.activities %}
+                                    <strong>Activities:</strong><br>
+                                    <small>{{ child.activities }}</small><br>
+                                {% endif %}
+                                {% if child.preferences %}
+                                    <strong>Preferences:</strong><br>
+                                    <small>{{ child.preferences }}</small><br>
+                                {% endif %}
+                                {% if child.special_needs %}
+                                    <div class="alert alert-info py-2">
+                                        <strong>Special Needs:</strong><br>
+                                        <small>{{ child.special_needs }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small">
+                            Last updated: {{ child.updated_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i data-feather="users" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        <h3 class="text-muted">No Children Profiles Yet</h3>
+        <p class="text-muted mb-4">Add detailed profiles for all children involved in your case to help organize important information.</p>
+        <a href="{{ url_for('add_child') }}" class="btn btn-primary">
+            <i data-feather="plus" class="me-1"></i>Add First Child Profile
+        </a>
+    </div>
+{% endif %}
+
+<!-- Benefits Information Card -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Why Children Profiles Matter</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Best Interests Focus:</strong> Courts prioritize children's wellbeing in all decisions</li>
+                    <li><strong>Comprehensive Documentation:</strong> Having detailed records shows your preparation and care</li>
+                    <li><strong>Quick Reference:</strong> Easy access to medical, school, and emergency information</li>
+                    <li><strong>Continuity Planning:</strong> Helps ensure stability during transitions</li>
+                    <li><strong>Legal Preparation:</strong> Essential information for custody evaluations and court proceedings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

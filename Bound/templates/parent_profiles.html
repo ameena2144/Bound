@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Profiles - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Parent Profiles</h1>
+        <p class="text-muted mb-0">Detailed information about parents and guardians in your case</p>
+    </div>
+    <a href="{{ url_for('add_parent') }}" class="btn btn-primary">
+        <i data-feather="plus" class="me-1"></i>Add Parent
+    </a>
+</div>
+
+{% if parents %}
+    <div class="row">
+        {% for parent in parents %}
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">{{ parent.first_name }} {{ parent.last_name }}</h5>
+                            <small class="text-muted">{{ parent.relationship_to_children.title() if parent.relationship_to_children else 'Parent/Guardian' }}</small>
+                        </div>
+                        <a href="{{ url_for('edit_parent', parent_id=parent.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i data-feather="edit" class="me-1"></i>Edit
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <!-- Contact Information -->
+                        <h6 class="text-primary mb-2">Contact Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                {% if parent.phone %}
+                                    <strong>Phone:</strong><br>
+                                    {{ parent.phone }}<br>
+                                {% endif %}
+                                {% if parent.email %}
+                                    <strong>Email:</strong><br>
+                                    <small>{{ parent.email }}</small><br>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                {% if parent.date_of_birth %}
+                                    <strong>Date of Birth:</strong><br>
+                                    {{ parent.date_of_birth.strftime('%m/%d/%Y') }}<br>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if parent.address %}
+                            <div class="mb-3">
+                                <strong>Address:</strong><br>
+                                <small>{{ parent.address }}</small>
+                            </div>
+                        {% endif %}
+
+                        <!-- Employment Information -->
+                        {% if parent.employer or parent.job_title or parent.income %}
+                            <h6 class="text-primary mb-2">Employment Information</h6>
+                            <div class="mb-3">
+                                {% if parent.employer %}
+                                    <strong>Employer:</strong> {{ parent.employer }}<br>
+                                {% endif %}
+                                {% if parent.job_title %}
+                                    <strong>Job Title:</strong> {{ parent.job_title }}<br>
+                                {% endif %}
+                                {% if parent.income %}
+                                    <strong>Income:</strong> {{ parent.income }}<br>
+                                {% endif %}
+                                {% if parent.work_phone %}
+                                    <strong>Work Phone:</strong> {{ parent.work_phone }}<br>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Housing Information -->
+                        {% if parent.housing_type or parent.housing_stability %}
+                            <h6 class="text-primary mb-2">Housing Information</h6>
+                            <div class="mb-3">
+                                {% if parent.housing_type %}
+                                    <strong>Housing Type:</strong> {{ parent.housing_type.title() }}<br>
+                                {% endif %}
+                                {% if parent.housing_stability %}
+                                    <strong>Housing Stability:</strong><br>
+                                    <small>{{ parent.housing_stability }}</small><br>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Parenting Information -->
+                        {% if parent.parenting_time or parent.parenting_concerns %}
+                            <h6 class="text-primary mb-2">Parenting Information</h6>
+                            <div class="mb-3">
+                                {% if parent.parenting_time %}
+                                    <strong>Current Parenting Time:</strong><br>
+                                    <small>{{ parent.parenting_time }}</small><br>
+                                {% endif %}
+                                {% if parent.parenting_concerns %}
+                                    <strong>Parenting Concerns:</strong><br>
+                                    <small>{{ parent.parenting_concerns }}</small><br>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Background Information -->
+                        {% if parent.criminal_history or parent.substance_abuse_history or parent.mental_health_history %}
+                            <h6 class="text-warning mb-2">Background Information</h6>
+                            <div class="mb-3">
+                                {% if parent.criminal_history %}
+                                    <div class="alert alert-warning py-2 mb-2">
+                                        <strong>Criminal History:</strong><br>
+                                        <small>{{ parent.criminal_history }}</small>
+                                    </div>
+                                {% endif %}
+                                {% if parent.substance_abuse_history %}
+                                    <div class="alert alert-warning py-2 mb-2">
+                                        <strong>Substance Abuse History:</strong><br>
+                                        <small>{{ parent.substance_abuse_history }}</small>
+                                    </div>
+                                {% endif %}
+                                {% if parent.mental_health_history %}
+                                    <div class="alert alert-info py-2 mb-2">
+                                        <strong>Mental Health History:</strong><br>
+                                        <small>{{ parent.mental_health_history }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small">
+                            Last updated: {{ parent.updated_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i data-feather="user" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        <h3 class="text-muted">No Parent Profiles Yet</h3>
+        <p class="text-muted mb-4">Add detailed profiles for all parents and guardians involved in your case.</p>
+        <a href="{{ url_for('add_parent') }}" class="btn btn-primary">
+            <i data-feather="plus" class="me-1"></i>Add First Parent Profile
+        </a>
+    </div>
+{% endif %}
+
+<!-- Benefits Information Card -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Why Parent Profiles Are Important</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Custody Evaluations:</strong> Comprehensive information for court-ordered evaluations</li>
+                    <li><strong>Stability Assessment:</strong> Document housing, employment, and financial stability</li>
+                    <li><strong>Parenting Capacity:</strong> Show your understanding of each parent's strengths and concerns</li>
+                    <li><strong>Communication Records:</strong> Track important contact information and communication patterns</li>
+                    <li><strong>Legal Strategy:</strong> Help your attorney understand all parties and develop case strategy</li>
+                    <li><strong>Court Preparation:</strong> Have all relevant information readily available for hearings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

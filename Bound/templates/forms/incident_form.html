@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if incident else 'Log' }} Incident - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">{{ 'Edit' if incident else 'Log' }} Incident</h1>
+        <p class="text-muted mb-0">{{ 'Update' if incident else 'Document' }} important events and incidents for your case</p>
+    </div>
+    <a href="{{ url_for('incidents') }}" class="btn btn-outline-secondary">
+        <i data-feather="arrow-left" class="me-1"></i>Back to Incidents
+    </a>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Basic Incident Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="alert-triangle" class="me-2"></i>Incident Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Incident Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ incident.title if incident else '' }}" required
+                               placeholder="Brief descriptive title for this incident">
+                        <div class="invalid-feedback">Please provide a title for this incident.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="incident_date" class="form-label">Date & Time *</label>
+                                <input type="datetime-local" class="form-control" id="incident_date" name="incident_date" 
+                                       value="{{ incident.incident_date.strftime('%Y-%m-%dT%H:%M') if incident else '' }}" required>
+                                <div class="invalid-feedback">Please specify when this incident occurred.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ incident.location if incident else '' }}" 
+                                       placeholder="Where did this incident occur?">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="incident_type" class="form-label">Incident Type</label>
+                                <select class="form-select" id="incident_type" name="incident_type">
+                                    <option value="">Select incident type</option>
+                                    <option value="missed_visitation" {{ 'selected' if incident and incident.incident_type == 'missed_visitation' else '' }}>Missed Visitation</option>
+                                    <option value="late_pickup" {{ 'selected' if incident and incident.incident_type == 'late_pickup' else '' }}>Late Pickup/Drop-off</option>
+                                    <option value="communication_issue" {{ 'selected' if incident and incident.incident_type == 'communication_issue' else '' }}>Communication Issue</option>
+                                    <option value="safety_concern" {{ 'selected' if incident and incident.incident_type == 'safety_concern' else '' }}>Safety Concern</option>
+                                    <option value="court_order_violation" {{ 'selected' if incident and incident.incident_type == 'court_order_violation' else '' }}>Court Order Violation</option>
+                                    <option value="child_distress" {{ 'selected' if incident and incident.incident_type == 'child_distress' else '' }}>Child Distress</option>
+                                    <option value="medical_issue" {{ 'selected' if incident and incident.incident_type == 'medical_issue' else '' }}>Medical Issue</option>
+                                    <option value="school_issue" {{ 'selected' if incident and incident.incident_type == 'school_issue' else '' }}>School-Related Issue</option>
+                                    <option value="harassment" {{ 'selected' if incident and incident.incident_type == 'harassment' else '' }}>Harassment</option>
+                                    <option value="other" {{ 'selected' if incident and incident.incident_type == 'other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="severity" class="form-label">Severity Level</label>
+                                <select class="form-select" id="severity" name="severity">
+                                    <option value="low" {{ 'selected' if incident and incident.severity == 'low' else '' }}>Low - Minor issue</option>
+                                    <option value="medium" {{ 'selected' if incident and incident.severity == 'medium' else '' }}>Medium - Moderate concern</option>
+                                    <option value="high" {{ 'selected' if incident and incident.severity == 'high' else '' }}>High - Serious issue</option>
+                                    <option value="critical" {{ 'selected' if incident and incident.severity == 'critical' else '' }}>Critical - Emergency/dangerous</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Detailed Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="6" required
+                                  placeholder="Provide a detailed, factual account of what happened. Include specific times, actions, words spoken, and other relevant details.">{{ incident.description if incident else '' }}</textarea>
+                        <div class="form-text">Be specific and factual. This information may be used in legal proceedings.</div>
+                        <div class="invalid-feedback">Please provide a detailed description of the incident.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- People Involved -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="users" class="me-2"></i>People Involved</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="children_involved" class="form-label">Children Present/Affected</label>
+                        <div class="row">
+                            {% for child in children %}
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               id="child_{{ child.id }}" name="children_involved" value="{{ child.id }}"
+                                               {{ 'checked' if incident and child.id|string in incident.children_involved.split(',') else '' }}>
+                                        <label class="form-check-label" for="child_{{ child.id }}">
+                                            {{ child.first_name }} {{ child.last_name }}
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if not children %}
+                            <p class="text-muted small">No children profiles found. <a href="{{ url_for('add_child') }}">Add child profiles</a> to track their involvement.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="other_party_involved" name="other_party_involved" 
+                                   {{ 'checked' if incident and incident.other_party_involved else '' }}>
+                            <label class="form-check-label" for="other_party_involved">
+                                Other parent/party was involved
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="witnesses" class="form-label">Witnesses</label>
+                        <textarea class="form-control" id="witnesses" name="witnesses" rows="3" 
+                                  placeholder="List any witnesses (names, contact information, relationship)">{{ incident.witnesses if incident else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="camera" class="me-2"></i>Documentation & Evidence</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="police_report" name="police_report" 
+                                       {{ 'checked' if incident and incident.police_report else '' }}>
+                                <label class="form-check-label" for="police_report">
+                                    Police report was filed
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="photos_taken" name="photos_taken" 
+                                       {{ 'checked' if incident and incident.photos_taken else '' }}>
+                                <label class="form-check-label" for="photos_taken">
+                                    Photos/videos were taken
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="police_report_number" class="form-label">Police Report Number</label>
+                        <input type="text" class="form-control" id="police_report_number" name="police_report_number" 
+                               value="{{ incident.police_report_number if incident else '' }}" 
+                               placeholder="Report number if applicable">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="documentation_notes" class="form-label">Documentation Notes</label>
+                        <textarea class="form-control" id="documentation_notes" name="documentation_notes" rows="3" 
+                                  placeholder="Details about photos, videos, recordings, or other evidence collected">{{ incident.documentation_notes if incident else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Actions & Follow-up -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="clipboard" class="me-2"></i>Actions & Follow-up</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="action_taken" class="form-label">Action Taken</label>
+                        <textarea class="form-control" id="action_taken" name="action_taken" rows="4" 
+                                  placeholder="What actions were taken immediately following this incident?">{{ incident.action_taken if incident else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="follow_up_needed" name="follow_up_needed" 
+                                   {{ 'checked' if incident and incident.follow_up_needed else '' }}>
+                            <label class="form-check-label" for="follow_up_needed">
+                                Follow-up action needed
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="follow_up_date" class="form-label">Follow-up Date</label>
+                        <input type="date" class="form-control" id="follow_up_date" name="follow_up_date" 
+                               value="{{ incident.follow_up_date.strftime('%Y-%m-%d') if incident and incident.follow_up_date else '' }}">
+                        <div class="form-text">When should you follow up on this incident?</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save" class="me-1"></i>
+                            {{ 'Update' if incident else 'Log' }} Incident
+                        </button>
+                        <a href="{{ url_for('incidents') }}" class="btn btn-outline-secondary">
+                            <i data-feather="x" class="me-1"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Severity Guide -->
+            <div class="card border-warning mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Severity Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <p><strong class="text-secondary">Low:</strong> Minor scheduling issues, brief miscommunication</p>
+                        <p><strong class="text-info">Medium:</strong> Pattern of behavior, moderate safety concerns</p>
+                        <p><strong class="text-warning">High:</strong> Serious safety concerns, court order violations</p>
+                        <p class="mb-0"><strong class="text-danger">Critical:</strong> Immediate danger, emergency situations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Help Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="help-circle" class="me-2"></i>Incident Documentation Best Practices</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Documentation Tips:</h6>
+                        <ul class="small">
+                            <li><strong>Be Factual:</strong> Stick to observable facts, avoid opinions</li>
+                            <li><strong>Include Details:</strong> Specific times, locations, exact words</li>
+                            <li><strong>Document Quickly:</strong> Record information while memory is fresh</li>
+                            <li><strong>Include Evidence:</strong> Photos, texts, emails, witness statements</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Legal Considerations:</h6>
+                        <ul class="small">
+                            <li><strong>Court Evidence:</strong> Well-documented incidents can be used in court</li>
+                            <li><strong>Pattern Recognition:</strong> Multiple incidents may show behavior patterns</li>
+                            <li><strong>Safety First:</strong> Always prioritize child and personal safety</li>
+                            <li><strong>Professional Help:</strong> Consider involving police for serious incidents</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Incidents - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">Incident Log</h1>
+        <p class="text-muted mb-0">Document and track important events and incidents</p>
+    </div>
+    <a href="{{ url_for('add_incident') }}" class="btn btn-primary">
+        <i data-feather="plus" class="me-1"></i>Log Incident
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+{% if incidents %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i data-feather="alert-triangle" class="text-warning mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 class="card-title mb-0">{{ incidents|length }}</h4>
+                    <small class="text-muted">Total Incidents</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i data-feather="x-circle" class="text-danger mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 class="card-title mb-0">{{ incidents|selectattr('severity', 'in', ['critical', 'high'])|list|length }}</h4>
+                    <small class="text-muted">High/Critical</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i data-feather="calendar" class="text-info mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 class="card-title mb-0">{{ incidents|selectattr('incident_date', 'gt', (today - timedelta(days=30)))|list|length }}</h4>
+                    <small class="text-muted">This Month</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i data-feather="flag" class="text-success mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 class="card-title mb-0">{{ incidents|selectattr('follow_up_needed', 'equalto', True)|list|length }}</h4>
+                    <small class="text-muted">Need Follow-up</small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Incidents List -->
+{% if incidents %}
+    <div class="row">
+        {% for incident in incidents %}
+            <div class="col-12 mb-4">
+                <div class="card border-start border-4 border-{{ 
+                    'danger' if incident.severity == 'critical' else
+                    'warning' if incident.severity == 'high' else
+                    'info' if incident.severity == 'medium' else
+                    'secondary'
+                }}">
+                    <div class="card-header d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="mb-0 me-3">{{ incident.title }}</h5>
+                                <span class="badge bg-{{ 
+                                    'danger' if incident.severity == 'critical' else
+                                    'warning' if incident.severity == 'high' else
+                                    'info' if incident.severity == 'medium' else
+                                    'secondary'
+                                }}">
+                                    {{ incident.severity.title() }}
+                                </span>
+                                <span class="badge bg-light text-dark ms-2">
+                                    {{ incident.incident_type.replace('_', ' ').title() }}
+                                </span>
+                                {% if incident.follow_up_needed %}
+                                    <span class="badge bg-success ms-2">Follow-up Needed</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row text-sm text-muted">
+                                <div class="col-md-6">
+                                    <i data-feather="calendar" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                    {{ incident.incident_date.strftime('%A, %B %d, %Y at %I:%M %p') }}
+                                </div>
+                                {% if incident.location %}
+                                    <div class="col-md-6">
+                                        <i data-feather="map-pin" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                                        {{ incident.location }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i data-feather="more-horizontal"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">
+                                    <i data-feather="edit" class="me-2"></i>Edit Incident
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i data-feather="copy" class="me-2"></i>Duplicate
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#">
+                                    <i data-feather="trash-2" class="me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="text-primary">Incident Description</h6>
+                                <p>{{ incident.description }}</p>
+                                
+                                {% if incident.children_involved %}
+                                    <h6 class="text-success mt-3">Children Involved</h6>
+                                    <p class="small">{{ incident.children_involved }}</p>
+                                {% endif %}
+                                
+                                {% if incident.witnesses %}
+                                    <h6 class="text-info mt-3">Witnesses</h6>
+                                    <p class="small">{{ incident.witnesses }}</p>
+                                {% endif %}
+                                
+                                {% if incident.action_taken %}
+                                    <h6 class="text-warning mt-3">Action Taken</h6>
+                                    <p class="small">{{ incident.action_taken }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <!-- Documentation Status -->
+                                <h6 class="text-secondary">Documentation</h6>
+                                <div class="list-group list-group-flush small">
+                                    <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-0">
+                                        <span>Police Report</span>
+                                        {% if incident.police_report %}
+                                            <i data-feather="check-circle" class="text-success"></i>
+                                        {% else %}
+                                            <i data-feather="x-circle" class="text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-0">
+                                        <span>Photos/Videos</span>
+                                        {% if incident.photos_taken %}
+                                            <i data-feather="check-circle" class="text-success"></i>
+                                        {% else %}
+                                            <i data-feather="x-circle" class="text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center py-1 px-0">
+                                        <span>Other Party Involved</span>
+                                        {% if incident.other_party_involved %}
+                                            <i data-feather="check-circle" class="text-warning"></i>
+                                        {% else %}
+                                            <i data-feather="x-circle" class="text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if incident.police_report_number %}
+                                    <div class="mt-2">
+                                        <strong>Report #:</strong> {{ incident.police_report_number }}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if incident.follow_up_date %}
+                                    <div class="mt-2">
+                                        <strong>Follow-up Date:</strong><br>
+                                        <small>{{ incident.follow_up_date.strftime('%m/%d/%Y') }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if incident.documentation_notes %}
+                            <div class="alert alert-light mt-3">
+                                <h6 class="alert-heading">Documentation Notes</h6>
+                                <p class="mb-0 small">{{ incident.documentation_notes }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small mt-3">
+                            <i data-feather="clock" class="me-1" style="width: 1rem; height: 1rem;"></i>
+                            Logged: {{ incident.created_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                            {% if incident.updated_at != incident.created_at %}
+                                | Updated: {{ incident.updated_at.strftime('%m/%d/%Y at %I:%M %p') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i data-feather="alert-triangle" style="width: 4rem; height: 4rem;" class="text-muted mb-3"></i>
+        <h3 class="text-muted">No Incidents Logged</h3>
+        <p class="text-muted mb-4">Start documenting important events and incidents that occur during your case.</p>
+        <a href="{{ url_for('add_incident') }}" class="btn btn-primary">
+            <i data-feather="plus" class="me-1"></i>Log First Incident
+        </a>
+    </div>
+{% endif %}
+
+<!-- Incident Documentation Tips -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Incident Documentation Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>What to Document:</h6>
+                        <ul class="small">
+                            <li><strong>Missed Visitations:</strong> No-shows, late pickups, early returns</li>
+                            <li><strong>Safety Concerns:</strong> Unsafe driving, inappropriate supervision</li>
+                            <li><strong>Court Order Violations:</strong> Failure to follow custody agreements</li>
+                            <li><strong>Communication Issues:</strong> Harassment, inappropriate language</li>
+                            <li><strong>Child Distress:</strong> Emotional or behavioral concerns</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Documentation Best Practices:</h6>
+                        <ul class="small">
+                            <li><strong>Be Specific:</strong> Include exact times, dates, and locations</li>
+                            <li><strong>Stay Factual:</strong> Avoid opinions, stick to observable behaviors</li>
+                            <li><strong>Document Immediately:</strong> Record details while memory is fresh</li>
+                            <li><strong>Include Evidence:</strong> Photos, texts, witness statements</li>
+                            <li><strong>Follow Up:</strong> Note any actions taken or needed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

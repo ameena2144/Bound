@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Case Summary - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">AI-Powered Case Summary</h1>
+        <p class="text-muted mb-0">Comprehensive analysis focusing on children's best interests</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i data-feather="printer" class="me-1"></i>Print Summary
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+{% if 'error' in summary %}
+    <div class="alert alert-warning">
+        <i data-feather="alert-triangle" class="me-2"></i>
+        <strong>Analysis Unavailable:</strong> {{ summary.error }}
+        <br><small>Please check your OpenAI API configuration and try again.</small>
+    </div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Executive Summary -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-feather="file-text" class="me-2"></i>
+                    Executive Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ summary.executive_summary }}</p>
+            </div>
+        </div>
+
+        <!-- Children's Best Interests Analysis -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i data-feather="heart" class="me-2"></i>
+                    Children's Best Interests Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>{{ summary.children_best_interests }}</p>
+            </div>
+        </div>
+
+        <!-- Key Strengths -->
+        {% if summary.key_strengths and summary.key_strengths|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="check-circle" class="me-2"></i>
+                        Case Strengths
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for strength in summary.key_strengths %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="plus-circle" class="text-success me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ strength }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Areas of Concern -->
+        {% if summary.areas_of_concern and summary.areas_of_concern|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        Areas of Concern
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for concern in summary.areas_of_concern %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="alert-circle" class="text-warning me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ concern }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Recommended Actions -->
+        {% if summary.recommended_actions and summary.recommended_actions|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="target" class="me-2"></i>
+                        Recommended Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for action in summary.recommended_actions %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="arrow-right" class="text-primary me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ action }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Documentation Gaps -->
+        {% if summary.documentation_gaps and summary.documentation_gaps|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="folder" class="me-2"></i>
+                        Documentation Gaps
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Consider obtaining these documents to strengthen your case:</p>
+                    <ul class="list-group list-group-flush">
+                        {% for gap in summary.documentation_gaps %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="file-plus" class="text-info me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ gap }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Legal Considerations -->
+        {% if summary.legal_considerations and summary.legal_considerations|length > 0 %}
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="briefcase" class="me-2"></i>
+                        Legal Considerations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for consideration in summary.legal_considerations %}
+                            <li class="list-group-item d-flex align-items-start">
+                                <i data-feather="scale" class="text-secondary me-2 mt-1" style="width: 1rem; height: 1rem; flex-shrink: 0;"></i>
+                                <span>{{ consideration }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Case Overview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-feather="info" class="me-2"></i>Case Overview</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td><strong>Case Title:</strong></td>
+                        <td>{{ case.case_title }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Case Type:</strong></td>
+                        <td>{{ case.case_type }}</td>
+                    </tr>
+                    {% if case.court_name %}
+                        <tr>
+                            <td><strong>Court:</strong></td>
+                            <td>{{ case.court_name }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if case.case_number %}
+                        <tr>
+                            <td><strong>Case Number:</strong></td>
+                            <td>{{ case.case_number }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td><strong>Generated:</strong></td>
+                        <td>Just now</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-feather="zap" class="me-2"></i>Next Steps</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('preparation_checklist') }}" class="btn btn-outline-primary">
+                        <i data-feather="check-square" class="me-1"></i>Preparation Checklist
+                    </a>
+                    <a href="{{ url_for('documents') }}" class="btn btn-outline-success">
+                        <i data-feather="upload" class="me-1"></i>Upload Documents
+                    </a>
+                    <a href="{{ url_for('add_incident') }}" class="btn btn-outline-warning">
+                        <i data-feather="plus" class="me-1"></i>Log Incident
+                    </a>
+                    <a href="{{ url_for('deadlines') }}" class="btn btn-outline-info">
+                        <i data-feather="calendar" class="me-1"></i>Manage Deadlines
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i data-feather="alert-triangle" class="me-2"></i>Important Disclaimer</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Not Legal Advice:</strong> This AI-generated summary is for organizational purposes only and does not constitute legal advice.</p>
+                    <p><strong>Consult Professionals:</strong> Always consult with a qualified attorney for legal strategy and advice.</p>
+                    <p class="mb-0"><strong>Verify Information:</strong> Review all AI analysis for accuracy and completeness.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        break-inside: avoid;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+    }
+    
+    .bg-primary, .bg-success, .bg-warning, .bg-info, .bg-secondary {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+    }
+}
+</style>
+{% endblock %}

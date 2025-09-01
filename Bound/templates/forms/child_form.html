@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if child else 'Add' }} Child Profile - Legal Case Binder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-1">{{ 'Edit' if child else 'Add' }} Child Profile</h1>
+        <p class="text-muted mb-0">{{ 'Update' if child else 'Enter' }} detailed information about the child</p>
+    </div>
+    <a href="{{ url_for('children_profiles') }}" class="btn btn-outline-secondary">
+        <i data-feather="arrow-left" class="me-1"></i>Back to Children
+    </a>
+</div>
+
+<form method="POST" class="needs-validation" novalidate>
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Basic Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="user" class="me-2"></i>Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ child.first_name if child else '' }}" required>
+                                <div class="invalid-feedback">Please provide the child's first name.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ child.last_name if child else '' }}" required>
+                                <div class="invalid-feedback">Please provide the child's last name.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ child.date_of_birth.strftime('%Y-%m-%d') if child and child.date_of_birth else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">Select gender</option>
+                                    <option value="male" {{ 'selected' if child and child.gender == 'male' else '' }}>Male</option>
+                                    <option value="female" {{ 'selected' if child and child.gender == 'female' else '' }}>Female</option>
+                                    <option value="other" {{ 'selected' if child and child.gender == 'other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Living Situation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="home" class="me-2"></i>Current Living Situation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="current_residence" class="form-label">Currently Living With</label>
+                                <select class="form-select" id="current_residence" name="current_residence">
+                                    <option value="">Select residence</option>
+                                    <option value="mother" {{ 'selected' if child and child.current_residence == 'mother' else '' }}>Mother</option>
+                                    <option value="father" {{ 'selected' if child and child.current_residence == 'father' else '' }}>Father</option>
+                                    <option value="shared" {{ 'selected' if child and child.current_residence == 'shared' else '' }}>Shared/Joint</option>
+                                    <option value="grandparents" {{ 'selected' if child and child.current_residence == 'grandparents' else '' }}>Grandparents</option>
+                                    <option value="other_relative" {{ 'selected' if child and child.current_residence == 'other_relative' else '' }}>Other Relative</option>
+                                    <option value="foster" {{ 'selected' if child and child.current_residence == 'foster' else '' }}>Foster Care</option>
+                                    <option value="other" {{ 'selected' if child and child.current_residence == 'other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="residence_address" class="form-label">Current Address</label>
+                        <textarea class="form-control" id="residence_address" name="residence_address" rows="2" 
+                                  placeholder="Street address, city, state, zip code">{{ child.residence_address if child else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- School Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="book" class="me-2"></i>School Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="school_name" class="form-label">School Name</label>
+                                <input type="text" class="form-control" id="school_name" name="school_name" 
+                                       value="{{ child.school_name if child else '' }}" 
+                                       placeholder="Full name of school">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="grade_level" class="form-label">Grade Level</label>
+                                <input type="text" class="form-control" id="grade_level" name="grade_level" 
+                                       value="{{ child.grade_level if child else '' }}" 
+                                       placeholder="e.g., 3rd Grade, Pre-K">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="school_address" class="form-label">School Address</label>
+                                <textarea class="form-control" id="school_address" name="school_address" rows="2" 
+                                          placeholder="School address">{{ child.school_address if child else '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="school_phone" class="form-label">School Phone</label>
+                                <input type="tel" class="form-control" id="school_phone" name="school_phone" 
+                                       value="{{ child.school_phone if child else '' }}" 
+                                       placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="heart" class="me-2"></i>Medical Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="primary_doctor" class="form-label">Primary Doctor</label>
+                        <input type="text" class="form-control" id="primary_doctor" name="primary_doctor" 
+                               value="{{ child.primary_doctor if child else '' }}" 
+                               placeholder="Doctor's name and practice">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="medical_conditions" class="form-label">Medical Conditions</label>
+                        <textarea class="form-control" id="medical_conditions" name="medical_conditions" rows="3" 
+                                  placeholder="Any ongoing medical conditions, diagnoses, or health concerns">{{ child.medical_conditions if child else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="medications" class="form-label">Current Medications</label>
+                        <textarea class="form-control" id="medications" name="medications" rows="3" 
+                                  placeholder="List current medications, dosages, and schedules">{{ child.medications if child else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="allergies" class="form-label">Allergies</label>
+                        <textarea class="form-control" id="allergies" name="allergies" rows="2" 
+                                  placeholder="Food allergies, drug allergies, environmental allergies">{{ child.allergies if child else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="insurance_info" class="form-label">Insurance Information</label>
+                        <textarea class="form-control" id="insurance_info" name="insurance_info" rows="2" 
+                                  placeholder="Insurance provider, policy numbers, coverage details">{{ child.insurance_info if child else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Activities and Interests -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="smile" class="me-2"></i>Activities & Interests</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="activities" class="form-label">Current Activities</label>
+                        <textarea class="form-control" id="activities" name="activities" rows="4" 
+                                  placeholder="Sports, clubs, music lessons, tutoring, etc.">{{ child.activities if child else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="preferences" class="form-label">Preferences & Interests</label>
+                        <textarea class="form-control" id="preferences" name="preferences" rows="4" 
+                                  placeholder="Favorite activities, foods, subjects, hobbies">{{ child.preferences if child else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Special Needs -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="shield" class="me-2"></i>Special Needs & Accommodations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="special_needs" class="form-label">Special Needs</label>
+                        <textarea class="form-control" id="special_needs" name="special_needs" rows="4" 
+                                  placeholder="Learning disabilities, behavioral needs, therapy requirements, IEP information">{{ child.special_needs if child else '' }}</textarea>
+                        <div class="form-text">Include any special education services, therapies, or accommodations needed.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save" class="me-1"></i>
+                            {{ 'Update' if child else 'Save' }} Child Profile
+                        </button>
+                        <a href="{{ url_for('children_profiles') }}" class="btn btn-outline-secondary">
+                            <i data-feather="x" class="me-1"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Help Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i data-feather="help-circle" class="me-2"></i>Child Profile Tips</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Required Information:</h6>
+                        <ul class="small">
+                            <li>Only first and last name are required fields</li>
+                            <li>Fill out as much information as possible for complete records</li>
+                            <li>Information can be updated at any time</li>
+                            <li>All information is kept confidential and secure</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Why This Information Matters:</h6>
+                        <ul class="small">
+                            <li><strong>Court Considerations:</strong> Complete records show your preparation</li>
+                            <li><strong>Best Interests:</strong> Helps demonstrate what's best for the child</li>
+                            <li><strong>Emergency Planning:</strong> Important for custody transitions</li>
+                            <li><strong>Professional Use:</strong> Valuable for attorneys and evaluators</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
