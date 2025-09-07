@@ -1,140 +1,46 @@
 import os
-import secrets
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+import logging
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, date
-from dotenv import load_dotenv
+from sqlalchemy.orm import DeclarativeBase
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-load_dotenv()
+# Set up logging for debugging
+logging.basicConfig(level=logging.DEBUG)
 
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
+# Create the app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(16))
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-db = SQLAlchemy()
+# Configure the database
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///legal_binder.db")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+
+# Configure file uploads
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# Create uploads directory if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Initialize the app with the extension
 db.init_app(app)
 
-class Case(db.Model):
-    __tablename__ = 'cases'
-    id = db.Column(db.Integer, primary_key=True)
-    case_number = db.Column(db.String(100))
-    case_title = db.Column(db.String(200), nullable=False, default='My Family Law Case')
-    case_type = db.Column(db.String(100), default='Family Law')
-    status = db.Column(db.String(50), default='Open')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Child(db.Model):
-    __tablename__ = 'children'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)
-    age = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Parent(db.Model):
-    __tablename__ = 'parents'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Document(db.Model):
-    __tablename__ = 'documents'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    filename = db.Column(db.String(300), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Incident(db.Model):
-    __tablename__ = 'incidents'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Deadline(db.Model):
-    __tablename__ = 'deadlines'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    deadline_date = db.Column(db.Date, nullable=False)
-    is_completed = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class CaseNote(db.Model):
-    __tablename__ = 'case_notes'
-    id = db.Column(db.Integer, primary_key=True)
-    case_id = db.Column(db.Integer, db.ForeignKey('cases.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-@app.route('/')
-def dashboard():
-    case = Case.query.first()
-    if not case:
-        case = Case(case_title="My Family Law Case", case_type="Family Law")
-        db.session.add(case)
-        db.session.commit()
+with app.app_context():
+    # Import models and routes
+    import models  # noqa: F401
+    import routes  # noqa: F401
     
-    # Get data for dashboard
-    children = Child.query.filter_by(case_id=case.id).all()
-    parents = Parent.query.filter_by(case_id=case.id).all()
-    documents = Document.query.filter_by(case_id=case.id).limit(5).all()
-    deadlines = Deadline.query.filter_by(case_id=case.id, is_completed=False).limit(5).all()
-    
-    stats = {
-        'total_children': len(children),
-        'total_parents': len(parents),
-        'total_documents': Document.query.filter_by(case_id=case.id).count(),
-        'pending_deadlines': Deadline.query.filter_by(case_id=case.id, is_completed=False).count()
-    }
-    
-    return render_template('dashboard.html', 
-                         case=case, 
-                         children=children,
-                         parents=parents, 
-                         recent_documents=documents,
-                         upcoming_deadlines=deadlines,
-                         stats=stats)
-
-@app.route('/children')
-def children_profiles():
-    case = Case.query.first()
-    if not case:
-        return redirect(url_for('dashboard'))
-    children = Child.query.filter_by(case_id=case.id).all()
-    return render_template('children_profiles.html', children=children, case=case)
-
-@app.route('/parents') 
-def parent_profiles():
-    case = Case.query.first()
-    if not case:
-        return redirect(url_for('dashboard'))
-    parents = Parent.query.filter_by(case_id=case.id).all()
-    return render_template('parent_profiles.html', parents=parents, case=case)
-
-@app.route('/documents')
-def documents():
-    case = Case.query.first()
-    if not case:
-        return redirect(url_for('dashboard'))
-    docs = Document.query.filter_by(case_id=case.id).all()
-    return render_template('documents.html', documents=docs, case=case)
-
-@app.route('/deadlines')
-def deadlines():
-    case = Case.query.first()
-    if not case:
-        return redirect(url_for('dashboard'))
-    all_deadlines = Deadline.query.filter_by(case_id=case.id).all()
-    return render_template('deadlines.html', deadlines=all_deadlines, case=case)
+    db.create_all()
 
 if __name__ == '__main__':
-    with app.app_context():
-        try:
-            db.create_all()
-            print("Database tables created/verified")
-        except Exception as e:
-            print(f"Database setup error: {e}")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
