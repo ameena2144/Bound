@@ -1,11 +1,11 @@
 Flask==3.1.0
-Flask-SQLAIchemy==3.1.1
-SQLAIchemy==2.0.23
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.23
 gunicorn==23.0.0
 python-dotenv==1.0.1
 openai==1.54.0
 psycopg2-binary==2.9.10
 email-validator==2.2.0
-Werkzeug=-3.0.4
+Werkzeug==3.0.4
 python-docx==1.1.2
 pypdf2==3.0.1
