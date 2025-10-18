@@ -10,3 +10,10 @@ python-docx>=1.2.0
 sqlalchemy>=2.0.43
 werkzeug>=3.1.3
 python-dotenv>=1.0.0
+Flask==3.0.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+openai==1.3.0
+SQLA1chemy--2.0.23
+psycopg2-binary==2.99
+Flask-SQLAlchemy==3.1.1
